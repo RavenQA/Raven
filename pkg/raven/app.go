@@ -3,11 +3,13 @@ package raven
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"github.com/soikes/raven/pkg/appdata"
 	"github.com/soikes/raven/pkg/browser"
+	"github.com/soikes/raven/pkg/browser/firefox"
 	"github.com/soikes/raven/pkg/db"
-	"github.com/soikes/raven/pkg/fetch/firefox"
+	fetchff "github.com/soikes/raven/pkg/fetch/firefox"
 	"github.com/soikes/raven/pkg/types"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -16,7 +18,7 @@ import (
 type App struct {
 	appData *appdata.Config
 	db      *db.Db
-	fetcher *firefox.Config
+	ff      firefox.Firefox
 	ctx     context.Context
 }
 
@@ -47,12 +49,11 @@ func (a *App) Start(ctx context.Context) {
 		failStart(ctx, err)
 		panic(err)
 	}
+	a.ff = firefox.Firefox{Ctx: ctx}
 }
 
-func (a *App) Fetch() {}
-func (a *App) Run()   {}
 func (a *App) FetchVersions() ([]types.BrowserListItem, error) {
-	versions, err := firefox.GetVersions()
+	versions, err := fetchff.GetVersions()
 	if err != nil {
 		return nil, err
 	}
@@ -71,6 +72,33 @@ func (a *App) FetchVersions() ([]types.BrowserListItem, error) {
 		bli = append(bli, types.NewBrowserListItem(b))
 	}
 	return bli, nil
+}
+
+func (a *App) FetchFirefox(version string) error {
+	cfg := browser.FetchConfig{
+		Version:      version,
+		TmpDir:       a.appData.TmpDir,
+		DownloadName: fmt.Sprintf(`firefox-%s`, version),
+	}
+	return a.ff.Fetch(cfg)
+}
+
+func (a *App) InstallFirefox(version string) error {
+	cfg := browser.InstallConfig{
+		TmpDir:     a.appData.TmpDir,
+		ImageName:  fmt.Sprintf(`firefox-%s`, version),
+		VolumesDir: a.appData.TmpDir,
+		AppPath:    filepath.Join(a.appData.Dir, fmt.Sprintf(`firefox-%s`, version)),
+	}
+	return a.ff.Install(cfg)
+}
+
+func (a *App) LaunchFirefox(version, startUrl string) error {
+	cfg := browser.LaunchConfig{
+		AppPath:  filepath.Join(a.appData.Dir, fmt.Sprintf(`firefox-%s`, version)),
+		StartUrl: startUrl,
+	}
+	return a.ff.Launch(cfg)
 }
 
 func failStart(ctx context.Context, err error) {

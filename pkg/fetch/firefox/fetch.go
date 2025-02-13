@@ -89,12 +89,13 @@ func buildApiUrl(platform platform.Platform, lang language.Tag) (string, error) 
 }
 
 func buildFtpUrl(version string, platform platform.Platform, lang language.Tag) (string, error) {
-	panic("TODO")
 	var u *url.URL
 	u, err := url.Parse(releaseFtpUrl)
 	if err != nil {
 		return "", err
 	}
+	name := fmt.Sprintf("%s %s%s", `Firefox`, version, macInstallerExt)
+	u = u.JoinPath(version, platformDirs[platform], lang.String(), name)
 	return u.String(), nil
 }
 
@@ -103,6 +104,7 @@ func fetchRelease(u string, outpath string, progressFunc progress.ProgressFunc) 
 	if err != nil {
 		return err
 	}
+	fmt.Println("getting: ", u)
 	rsp, err := http.Get(u)
 	if err != nil {
 		return err

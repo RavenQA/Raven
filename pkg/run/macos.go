@@ -1,12 +1,13 @@
 package run
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 )
 
-func RunMacOS(path string, args ...string) error {
-	cmd := exec.Command(`open`, append([]string{`-a`, path, `--args`}, args...)...)
+func RunMacOS(ctx context.Context, path string, args ...string) error {
+	cmd := exec.CommandContext(ctx, `open`, append([]string{`-a`, path, `--args`}, args...)...)
 	err := cmd.Run()
 	if err != nil {
 		fmt.Println(err)

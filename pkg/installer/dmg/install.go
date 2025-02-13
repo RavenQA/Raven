@@ -1,6 +1,7 @@
 package dmg
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -8,13 +9,13 @@ import (
 	"path/filepath"
 )
 
-func (d *Dmg) Install() (err error) {
-	err = d.attach(d.ImagePath)
+func (d *Dmg) Install(ctx context.Context) (err error) {
+	err = d.attach(ctx, d.ImagePath)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		derr := d.detach()
+		derr := d.detach(ctx)
 		if derr != nil {
 			err = derr
 		}
@@ -47,8 +48,8 @@ func (d *Dmg) Install() (err error) {
 	return err
 }
 
-func (d Dmg) attach(outpath string) error {
-	c := exec.Command(dmgCmd, append(d.attachArgs(), outpath)...)
+func (d Dmg) attach(ctx context.Context, outpath string) error {
+	c := exec.CommandContext(ctx, dmgCmd, append(d.attachArgs(), outpath)...)
 	err := c.Run()
 	if err != nil {
 		if xerr, ok := err.(*exec.ExitError); ok {
@@ -59,8 +60,8 @@ func (d Dmg) attach(outpath string) error {
 	return nil
 }
 
-func (d Dmg) detach() error {
-	c := exec.Command(dmgCmd, d.detachArgs()...)
+func (d Dmg) detach(ctx context.Context) error {
+	c := exec.CommandContext(ctx, dmgCmd, d.detachArgs()...)
 	err := c.Run()
 	if err != nil {
 		if xerr, ok := err.(*exec.ExitError); ok {

@@ -15,7 +15,20 @@ import (
 )
 
 type Firefox struct {
-	browser.Browser
+	Ctx context.Context
+}
+
+func (f *Firefox) Fetch(cfg browser.FetchConfig) error {
+	fcfg := firefox.Config{
+		Platform:     platform.PlatformMac,
+		ProgressFunc: progress.ProgressPercentageHandler(f.Ctx),
+		DownloadPath: filepath.Join(cfg.TmpDir, cfg.DownloadName),
+	}
+	err := fcfg.Fetch(cfg.Version, language.AmericanEnglish)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (f *Firefox) Install(cfg browser.InstallConfig) error {
@@ -25,10 +38,10 @@ func (f *Firefox) Install(cfg browser.InstallConfig) error {
 	}
 	d := dmg.NewDmg(
 		dmg.WithMountPoint(mnt),
-		dmg.WithAppPath(filepath.Join(cfg.AppDir, f.Identifier())),
-		dmg.WithImagePath(cfg.ImagePath),
+		dmg.WithAppPath(cfg.AppPath),
+		dmg.WithImagePath(filepath.Join(cfg.TmpDir, cfg.ImageName)),
 	)
-	err = d.Install()
+	err = d.Install(f.Ctx)
 	if err != nil {
 		return err
 	}
@@ -36,20 +49,7 @@ func (f *Firefox) Install(cfg browser.InstallConfig) error {
 }
 
 func (f *Firefox) Launch(cfg browser.LaunchConfig) error {
-	name := f.Identifier()
-	err := run.RunMacOS(filepath.Join(cfg.AppDir, name), "-new-window", cfg.StartUrl)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (f *Firefox) Fetch(ctx context.Context, cfg browser.FetchConfig) error {
-	fcfg := firefox.Config{
-		Platform:     platform.PlatformMac,
-		ProgressFunc: progress.ProgressPercentageHandler(ctx),
-	}
-	err := fcfg.Fetch(f.VersionString(), language.AmericanEnglish)
+	err := run.RunMacOS(f.Ctx, cfg.AppPath, "-new-window", cfg.StartUrl)
 	if err != nil {
 		return err
 	}

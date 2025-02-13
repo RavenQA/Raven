@@ -1,16 +1,19 @@
 package browser
 
 type FetchConfig struct {
-	TmpDir string
+	Version      string
+	TmpDir       string
+	DownloadName string
 }
 
 type InstallConfig struct {
-	ImagePath  string
+	TmpDir     string
+	ImageName  string
 	VolumesDir string
-	AppDir     string
+	AppPath    string
 }
 
 type LaunchConfig struct {
-	AppDir   string
+	AppPath  string
 	StartUrl string
 }

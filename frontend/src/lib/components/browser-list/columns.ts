@@ -3,9 +3,8 @@ import { renderComponent } from "$lib/components/ui/data-table/index.js";
 import DataTableNameButton from "./data-table-name-button.svelte";
 import DataTableVersionButton from "./data-table-version-button.svelte";
 import DataTableReleaseDateButton from "./data-table-release-date-button.svelte";
-// import type { BrowserListItemData } from "$lib/components/browser-list-item/types";
 import { types } from "$go/models";
-import { BrowserListItem } from "../browser-list-item";
+import BrowserListItem from "$lib/components/browser-list-item/browser-list-item.svelte";
 
 export const columns: ColumnDef<types.BrowserListItem>[] = [
   {
@@ -13,7 +12,10 @@ export const columns: ColumnDef<types.BrowserListItem>[] = [
     header: "",
     cell: ({ row }) =>
       renderComponent(BrowserListItem, {
-        data: { isAvailable: row.getValue("Available") },
+        data: {
+          Available: row.getValue("Available"),
+          Version: row.getValue("Version"),
+        },
       }),
   },
   {
