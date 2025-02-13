@@ -69,6 +69,10 @@ func (c *Config) Fetch(version string, lang language.Tag) error {
 	return fetchRelease(u, c.ProgressFunc)
 }
 
+// func (c *Config) GetVersionList() error {
+
+// }
+
 func buildApiUrl(platform platform.Platform, lang language.Tag) (string, error) {
 	var u *url.URL
 	u, err := url.Parse(releaseApiUrl)

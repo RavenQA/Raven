@@ -1,28 +1,56 @@
 package browser
 
 import (
+	"fmt"
 	"os"
-
-	"github.com/soikes/raven/pkg/installer/dmg"
-	"github.com/soikes/raven/pkg/run"
+	"time"
 )
 
-type Firefox struct{}
+type Version struct {
+	Id          int
+	Major       int
+	Minor       *int
+	Build       *int
+	Patch       *int
+	ReleaseDate time.Time
+}
 
-func (f *Firefox) Launch() error {
-	mnt, err := os.MkdirTemp("", "RavenBrowserVolumes")
-	if err != nil {
-		return err
+type Browser struct {
+	Version
+	Name      string
+	Path      string
+	Available bool
+}
+
+func (b *Browser) Identifier() string {
+	return fmt.Sprintf("%s-%s", b.Name, b.VersionString())
+}
+
+func (b *Browser) VersionString() string {
+	v := fmt.Sprint(b.Major)
+	if b.Minor != nil {
+		v += fmt.Sprintf(".%d", *b.Minor)
 	}
-	d := dmg.NewDmg(dmg.WithMountPoint(mnt))
-	app := "/Users/michael/Local/Firefox.app"
-	err = d.ExtractApp("/Users/michael/Downloads/Firefox 135.0.dmg", app)
-	if err != nil {
-		return err
+	if b.Build != nil {
+		v += fmt.Sprintf(".%d", *b.Build)
 	}
-	err = run.RunMacOS(app, "-new-window", "http://soikke.li/")
-	if err != nil {
-		return err
+	if b.Patch != nil {
+		v += fmt.Sprintf(".%d", *b.Patch)
 	}
-	return nil
+	return v
+}
+
+// IsAvailable checks if the Browser has been downloaded to the local filesystem.
+func (b *Browser) IsAvailable() (bool, error) {
+	if b.Path == "" {
+		return false, nil
+	}
+	_, err := os.Stat(b.Path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
 }

@@ -2,8 +2,11 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
+      "$runtime/*": ["./wailsjs/runtime/*"],
+      "$go/*": ["./wailsjs/go/*"],
       "$lib": ["./src/lib"],
-      "$lib/*": ["./src/lib/*"]
+      "$lib/*": ["./src/lib/*"],
+      "$assets/*": ["./src/assets/*"]
     }
   },
   "files": [],

@@ -1,7 +1,11 @@
 package progress
 
 import (
+	"context"
 	"io"
+
+	"github.com/soikes/raven/pkg/rpc"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type ProgressFunc func(int, int)
@@ -38,4 +42,11 @@ func (r *ProgressReadCloser) Read(p []byte) (int, error) {
 
 func (r *ProgressReadCloser) Close() error {
 	return r.Closer.Close()
+}
+
+func ProgressPercentageHandler(ctx context.Context) ProgressFunc {
+	return func(progress, total int) {
+		pct := float64(progress) / float64(total) * 100
+		runtime.EventsEmit(ctx, rpc.FetchProgressId, pct)
+	}
 }
