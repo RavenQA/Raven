@@ -6,6 +6,10 @@ export function Fetch() {
   return window['go']['raven']['App']['Fetch']();
 }
 
+export function FetchVersions() {
+  return window['go']['raven']['App']['FetchVersions']();
+}
+
 export function Run() {
   return window['go']['raven']['App']['Run']();
 }

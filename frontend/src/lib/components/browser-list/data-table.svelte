@@ -6,7 +6,6 @@
 		getCoreRowModel,
 		getFilteredRowModel,
 		getSortedRowModel,
-		createColumnHelper,
 	} from "@tanstack/table-core";
 	import {
 		createSvelteTable,
@@ -14,7 +13,6 @@
 	} from "$lib/components/ui/data-table/index";
 	import * as Table from "$lib/components/ui/table/index";
 	import { Input } from "$lib/components/ui/input/index";
-	import { type BrowserListItemData } from "$lib/components/browser-list-item/types";
 
 	type DataTableProps<TData, TValue> = {
 		columns: ColumnDef<TData, TValue>[];
@@ -25,7 +23,6 @@
 
 	let sorting = $state<SortingState>([]);
 	let columnFilters = $state<ColumnFiltersState>([]);
-	let columnHelper = createColumnHelper<BrowserListItemData>
 
 	const table = createSvelteTable({
 		get data() {
@@ -63,12 +60,12 @@
 <div class="flex items-center py-4">
     <Input
       placeholder="Filter browser name..."
-      value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+      value={(table.getColumn("Name")?.getFilterValue() as string) ?? ""}
       onchange={(e) => {
-        table.getColumn("name")?.setFilterValue(e.currentTarget.value);
+        table.getColumn("Name")?.setFilterValue(e.currentTarget.value);
       }}
       oninput={(e) => {
-        table.getColumn("name")?.setFilterValue(e.currentTarget.value);
+        table.getColumn("Name")?.setFilterValue(e.currentTarget.value);
       }}
       class="max-w-sm"
     />

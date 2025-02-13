@@ -49,6 +49,7 @@ var platformDirs = map[platform.Platform]string{
 type Config struct {
 	Platform     platform.Platform
 	ProgressFunc progress.ProgressFunc
+	DownloadPath string
 }
 
 func (c *Config) Fetch(version string, lang language.Tag) error {
@@ -66,12 +67,8 @@ func (c *Config) Fetch(version string, lang language.Tag) error {
 			return err
 		}
 	}
-	return fetchRelease(u, c.ProgressFunc)
+	return fetchRelease(u, c.DownloadPath, c.ProgressFunc)
 }
-
-// func (c *Config) GetVersionList() error {
-
-// }
 
 func buildApiUrl(platform platform.Platform, lang language.Tag) (string, error) {
 	var u *url.URL
@@ -101,13 +98,8 @@ func buildFtpUrl(version string, platform platform.Platform, lang language.Tag) 
 	return u.String(), nil
 }
 
-func fetchRelease(u string, progressFunc progress.ProgressFunc) error {
-	fmt.Printf("fetch %s\n", u)
-	tmp, err := os.MkdirTemp("", "raven-firefox-installer")
-	if err != nil {
-		return err
-	}
-	f, err := os.CreateTemp(tmp, "installer")
+func fetchRelease(u string, outpath string, progressFunc progress.ProgressFunc) error {
+	f, err := os.Create(outpath)
 	if err != nil {
 		return err
 	}
@@ -126,6 +118,5 @@ func fetchRelease(u string, progressFunc progress.ProgressFunc) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("downloaded: %s\n", f.Name())
 	return nil
 }
