@@ -1,10 +1,10 @@
 <script lang="ts" module>
-    import type { types } from "$go/models";
+    import type { browser } from "$go/models";
     import type { WithElementRef } from "bits-ui";
     import type { HTMLAttributes } from "svelte/elements";
   
     export type BrowserListItemProps = WithElementRef<HTMLAttributes<HTMLDivElement>> & {
-        data: types.BrowserListItem
+        data: browser.Browser
     }
 </script>
 
@@ -15,7 +15,6 @@
 	import { Button } from "$lib/components/ui/button/index";
 	import Download from "lucide-svelte/icons/download";
 	import Check from "lucide-svelte/icons/check";
-	import Archive from "$lib/components/icons/archive/archive.svelte"
 	
 	let {
        ref = $bindable(null),
@@ -29,28 +28,34 @@
 	let fetchProgress = $state(0);
 	let isFetching = $state(false);
 	let isInstalling = $state(false);
-	let isInstalled = $state(false); // TODO: set data.Available in the Go func after install (and update DB)
+	let isInstalled = $state(false);
 	let startUrl = `http://soikke.li`
-
+	
 	function fetch(): void {
 		console.log(`fetching ${data.Version}`);
 		let stopListen = EventsOn("fetch-progress", (pct: number) => {
-			console.log(`progress: ${pct}`);
 			fetchProgress = pct;
 		});
 		isFetching = true;
 		FetchFirefox(data.Version)
-			.catch((err: Error) => console.log(err))
-			.finally(() => {
-				isFetching = false;
-				stopListen();
-				isInstalling = true;
-				InstallFirefox(data.Version)
-  		            .catch((err: Error) => console.log(err))
-              		.finally(() => {
-                 	    isInstalling = false;
+    		.catch((err: Error) => console.log(err))
+    		.finally(() => {
+     			isFetching = false;
+       			stopListen();
+    		})
+		    .then(() => {
+                isInstalling = true;
+                InstallFirefox(data.Version)
+                    .then(() => {
                         isInstalled = true;
-              		});
+                    })
+                    .catch((err: Error) => {
+                        console.log(err);
+                        return
+                    })
+                    .finally(() => {
+                        isInstalling = false;
+                    });
 			});
 	}
 
@@ -61,15 +66,15 @@
 
 <div>
 	<div class="flex items-center gap-4">
-		{#if isInstalled}
-			<Check class="size-4"/>
+		{#if (data.InstallPath != "" || isInstalled)}
+			<Check class="size-4 ml-3"/>
 			<Button size="sm" variant="outline" onclick={launch}>
 				Launch
 			</Button>
 		{:else if isFetching }
 			<ProgressRing class="size-4" percent={fetchProgress} />
 		{:else if isInstalling }
-			<span class="text-sm">Installing...</span>
+			<div class="size-4 text-sm">Installing...</div>
 		{:else}
 			<Button size="sm" variant="outline" onclick={fetch}>
 				<Download />

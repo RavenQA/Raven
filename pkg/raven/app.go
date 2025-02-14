@@ -2,15 +2,17 @@ package raven
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log"
 	"path/filepath"
+	"slices"
 
 	"github.com/soikes/raven/pkg/appdata"
 	"github.com/soikes/raven/pkg/browser"
 	"github.com/soikes/raven/pkg/browser/firefox"
+	"github.com/soikes/raven/pkg/browser/firefox/fetch"
 	"github.com/soikes/raven/pkg/db"
-	fetchff "github.com/soikes/raven/pkg/fetch/firefox"
-	"github.com/soikes/raven/pkg/types"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -49,56 +51,98 @@ func (a *App) Start(ctx context.Context) {
 		failStart(ctx, err)
 		panic(err)
 	}
-	a.ff = firefox.Firefox{Ctx: ctx}
+	a.ff = firefox.Firefox{Ctx: ctx, Db: d}
 }
 
-func (a *App) FetchVersions() ([]types.BrowserListItem, error) {
-	versions, err := fetchff.GetVersions()
+func (a *App) SyncBrowsers() ([]browser.Browser, error) {
+	browsers, err := a.db.GetBrowsers(a.ctx)
 	if err != nil {
 		return nil, err
 	}
-	var bli []types.BrowserListItem
-	for _, version := range versions {
-		b := browser.Browser{
-			Version:   version,
-			Name:      `Firefox`,
-			Path:      ``,
-			Available: false,
+	remoteBrowsers, err := fetch.FetchBrowserList()
+	if err != nil {
+		log.Printf("failed to fetch new browsers: %s", err.Error())
+		if len(browsers) == 0 {
+			return nil, errors.New("Failed to fetch browser list. Check your network connection and try again later.")
+		} else {
+			return browsers, nil
 		}
-		// TODO: Fallback to the DB (Or start with the DB?)
-		// TODO: Where to generate the path
-		// TODO: Check the filesystem to see if it is installed
-		// TODO: Consolidate all of the above in a proper place ("sync")
-		bli = append(bli, types.NewBrowserListItem(b))
 	}
-	return bli, nil
+	var newBrowsers []browser.Browser
+	for _, remote := range remoteBrowsers {
+		newBrowser := true
+		for _, local := range browsers {
+			if remote.Identifier() == local.Identifier() {
+				newBrowser = false
+			}
+		}
+		if newBrowser {
+			newBrowsers = append(newBrowsers, remote)
+		}
+	}
+	browsers = append(browsers, newBrowsers...)
+	err = a.db.InsertBrowsers(a.ctx, browsers)
+	if err != nil {
+		return nil, err
+	}
+	slices.SortFunc(browsers, func(a, b browser.Browser) int {
+		if a.ReleaseDate.Equal(b.ReleaseDate) {
+			return 0
+		}
+		if a.ReleaseDate.Before(b.ReleaseDate) {
+			return -1
+		}
+		return 1
+	})
+	slices.Reverse(browsers)
+	return browsers, nil
 }
 
 func (a *App) FetchFirefox(version string) error {
+	id := browser.Identifier(browser.ProductFirefox, version)
 	cfg := browser.FetchConfig{
 		Version:      version,
 		TmpDir:       a.appData.TmpDir,
-		DownloadName: fmt.Sprintf(`firefox-%s`, version),
+		DownloadName: id,
 	}
-	return a.ff.Fetch(cfg)
+	err := a.ff.Fetch(cfg)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (a *App) InstallFirefox(version string) error {
-	cfg := browser.InstallConfig{
+	id := browser.Identifier(browser.ProductFirefox, version)
+	installPath := filepath.Join(a.appData.Dir, id)
+	icfg := browser.InstallConfig{
+		ImageName:  id,
+		AppPath:    installPath,
 		TmpDir:     a.appData.TmpDir,
-		ImageName:  fmt.Sprintf(`firefox-%s`, version),
 		VolumesDir: a.appData.TmpDir,
-		AppPath:    filepath.Join(a.appData.Dir, fmt.Sprintf(`firefox-%s`, version)),
 	}
-	return a.ff.Install(cfg)
+	err := a.ff.Install(icfg)
+	if err != nil {
+		return err
+	}
+	err = a.db.UpdateInstallPath(a.ctx, installPath, browser.ProductFirefox, version)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (a *App) LaunchFirefox(version, startUrl string) error {
+	id := browser.Identifier(browser.ProductFirefox, version)
 	cfg := browser.LaunchConfig{
-		AppPath:  filepath.Join(a.appData.Dir, fmt.Sprintf(`firefox-%s`, version)),
+		AppPath:  filepath.Join(a.appData.Dir, id),
 		StartUrl: startUrl,
 	}
 	return a.ff.Launch(cfg)
+}
+
+func (a *App) DropSchema() error {
+	return a.db.DropAll(a.ctx)
 }
 
 func failStart(ctx context.Context, err error) {

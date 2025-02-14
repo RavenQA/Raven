@@ -1,4 +1,4 @@
-package firefox
+package fetch
 
 import (
 	"fmt"
@@ -21,7 +21,7 @@ const platformWindows = `win64`
 const platformMac = `osx`
 const platformLinux64 = `linux64`
 const platformLinux = `linux`
-const productFirefox = `firefox-latest`
+const productFirefoxLatest = `firefox-latest`
 const macInstallerExt = `.dmg`
 
 var platforms = map[platform.Platform]string{
@@ -81,7 +81,7 @@ func buildApiUrl(platform platform.Platform, lang language.Tag) (string, error) 
 		return "", fmt.Errorf("unsupported platform %T", platform)
 	}
 	params := url.Values{}
-	params.Add(productKey, productFirefox)
+	params.Add(productKey, productFirefoxLatest)
 	params.Add(platformKey, p)
 	params.Add(langKey, lang.String())
 	u.RawQuery = params.Encode()

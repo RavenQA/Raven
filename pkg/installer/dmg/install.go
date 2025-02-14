@@ -34,12 +34,15 @@ func (d *Dmg) Install(ctx context.Context) (err error) {
 	if app == "" {
 		return errors.New("no .app in mounted .dmg")
 	}
-	e, err := exists(d.AppPath)
+	ok, err := exists(d.AppPath)
 	if err != nil {
 		return err
 	}
-	if e {
-		return fmt.Errorf("%s already exists", d.AppPath)
+	if ok {
+		err = os.RemoveAll(d.AppPath)
+		if err != nil {
+			return err
+		}
 	}
 	err = os.CopyFS(d.AppPath, os.DirFS(app))
 	if err != nil {

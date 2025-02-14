@@ -6,7 +6,9 @@ import (
 	"path/filepath"
 
 	"github.com/soikes/raven/pkg/browser"
-	"github.com/soikes/raven/pkg/fetch/firefox"
+	"github.com/soikes/raven/pkg/browser/firefox/fetch"
+	"github.com/soikes/raven/pkg/browser/firefox/policy"
+	"github.com/soikes/raven/pkg/db"
 	"github.com/soikes/raven/pkg/installer/dmg"
 	"github.com/soikes/raven/pkg/platform"
 	"github.com/soikes/raven/pkg/progress"
@@ -15,11 +17,12 @@ import (
 )
 
 type Firefox struct {
+	Db  *db.Db
 	Ctx context.Context
 }
 
 func (f *Firefox) Fetch(cfg browser.FetchConfig) error {
-	fcfg := firefox.Config{
+	fcfg := fetch.Config{
 		Platform:     platform.PlatformMac,
 		ProgressFunc: progress.ProgressPercentageHandler(f.Ctx),
 		DownloadPath: filepath.Join(cfg.TmpDir, cfg.DownloadName),
@@ -49,7 +52,16 @@ func (f *Firefox) Install(cfg browser.InstallConfig) error {
 }
 
 func (f *Firefox) Launch(cfg browser.LaunchConfig) error {
-	err := run.RunMacOS(f.Ctx, cfg.AppPath, "-new-window", cfg.StartUrl)
+	var err error
+	if cfg.Policy == nil {
+		err = policy.DefaultPolicy.Save(cfg.AppPath)
+	} else {
+		err = cfg.Policy.Save(cfg.AppPath)
+	}
+	if err != nil {
+		return err
+	}
+	err = run.RunMacOS(f.Ctx, cfg.AppPath, "-new-window", cfg.StartUrl)
 	if err != nil {
 		return err
 	}

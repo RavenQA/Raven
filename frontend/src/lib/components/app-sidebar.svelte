@@ -43,7 +43,7 @@
 	let activeItem = $state(data.sidebarItems[0]);
 </script>
 
-<Sidebar.Root bind:ref {...restProps} class="border-r">
+<Sidebar.Root bind:ref {...restProps} class="border-r h-dvh">
 	<Sidebar.Header>
 		<Sidebar.Menu>
 			<Sidebar.MenuItem>

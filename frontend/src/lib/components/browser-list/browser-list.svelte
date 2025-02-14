@@ -1,10 +1,10 @@
 <script lang="ts">
 	import DataTable from "./data-table.svelte";
+	import { ScrollArea } from "$lib/components/ui/scroll-area";
 	import { columns } from "./columns";
-	// import type { BrowserListItemData } from "$lib/components/browser-list-item/types";
-	import { types } from "$go/models";
+	import { browser } from "$go/models";
 
-	let { data }: { data: types.BrowserListItem[] } = $props();
+	let { data }: { data: browser.Browser[] } = $props();
 </script>
 
 <DataTable {data} {columns} />

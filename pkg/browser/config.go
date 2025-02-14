@@ -1,5 +1,7 @@
 package browser
 
+import "github.com/soikes/raven/pkg/browser/firefox/policy"
+
 type FetchConfig struct {
 	Version      string
 	TmpDir       string
@@ -16,4 +18,5 @@ type InstallConfig struct {
 type LaunchConfig struct {
 	AppPath  string
 	StartUrl string
+	Policy   *policy.PolicyRoot
 }

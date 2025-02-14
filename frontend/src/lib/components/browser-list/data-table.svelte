@@ -60,12 +60,12 @@
 <div class="flex items-center py-4">
     <Input
       placeholder="Filter browser name..."
-      value={(table.getColumn("Name")?.getFilterValue() as string) ?? ""}
+      value={(table.getColumn("Product")?.getFilterValue() as string) ?? ""}
       onchange={(e) => {
-        table.getColumn("Name")?.setFilterValue(e.currentTarget.value);
+        table.getColumn("Product")?.setFilterValue(e.currentTarget.value);
       }}
       oninput={(e) => {
-        table.getColumn("Name")?.setFilterValue(e.currentTarget.value);
+        table.getColumn("Product")?.setFilterValue(e.currentTarget.value);
       }}
       class="max-w-sm"
     />
